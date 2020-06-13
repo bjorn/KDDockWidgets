@@ -28,6 +28,7 @@
 #include "MainWindowBase.h"
 #include "DockWidgetBase.h"
 #include "DockRegistry_p.h"
+#include "multisplitter/Widget.h"
 
 #include <QSize>
 #include <QRect>
@@ -112,9 +113,11 @@ namespace Testing {
     void installFatalMessageHandler();
     void setExpectedWarning(const QString &);
 
-    bool waitForEvent(QWidget *w, QEvent::Type type, int timeout = 2000);
+    bool waitForEvent(QObject *w, QEvent::Type type, int timeout = 2000);
     bool waitForDeleted(QObject *o, int timeout = 2000);
     bool waitForResize(QWidget *w, int timeout = 2000);
+    bool waitForResize(Layouting::Widget *w, int timeout = 2000);
+    bool waitForDeleted(Layouting::Widget *w, int timeout = 2000);
 
     class HostedWidget : public QWidget
     {

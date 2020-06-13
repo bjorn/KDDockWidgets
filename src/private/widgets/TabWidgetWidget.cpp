@@ -33,7 +33,7 @@
 using namespace KDDockWidgets;
 
 TabWidgetWidget::TabWidgetWidget(Frame *parent)
-    : QTabWidget(parent)
+    : QTabWidget(parent->asQWidget())
     , TabWidget(this, parent)
     , m_tabBar(Config::self().frameworkWidgetFactory()->createTabBar(this))
 {

@@ -53,11 +53,11 @@ void DropIndicatorOverlayInterface::setHoveredFrame(Frame *frame)
 {
     if (frame != m_hoveredFrame) {
         if (m_hoveredFrame)
-            disconnect(m_hoveredFrame, &QObject::destroyed, this, &DropIndicatorOverlayInterface::onFrameDestroyed);
+            disconnect(m_hoveredFrame->asQObject(), &QObject::destroyed, this, &DropIndicatorOverlayInterface::onFrameDestroyed);
 
         m_hoveredFrame = frame;
         if (m_hoveredFrame)
-            connect(frame, &QObject::destroyed, this, &DropIndicatorOverlayInterface::onFrameDestroyed);
+            connect(frame->asQObject(), &QObject::destroyed, this, &DropIndicatorOverlayInterface::onFrameDestroyed);
 
         updateVisibility();
         Q_EMIT hoveredFrameChanged(m_hoveredFrame);

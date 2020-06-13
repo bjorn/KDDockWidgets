@@ -9,6 +9,8 @@ set(MULTISPLITTER_SRCS
     Separator_p.h
     Widget.cpp
     Widget.h
+    Widget_wrapper.cpp
+    Widget_wrapper.h
     multisplitter_export.h
 )
 

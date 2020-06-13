@@ -36,7 +36,6 @@
 
 namespace KDDockWidgets {
 
-class Frame;
 class Draggable;
 class DropIndicatorOverlayInterface;
 struct WindowBeingDragged;

@@ -1,7 +1,7 @@
 /*
   This file is part of KDDockWidgets.
 
-  Copyright (C) 2018-2020 Klarälvdalens Datakonsult AB, a KDAB Group company, info@kdab.com
+  Copyright (C) 2020 Klarälvdalens Datakonsult AB, a KDAB Group company, info@kdab.com
   Author: Sérgio Martins <sergio.martins@kdab.com>
 
   This program is free software; you can redistribute it and/or modify
@@ -22,30 +22,31 @@
 
 #include "Widget.h"
 
-#include <QWidget>
 
 ///@file
-///@brief A Layouting::Widget that's deals in QWidget
+///@brief A Layouting::Widget that just forwards the call to another Widget
 
 namespace Layouting {
 
-///@brief A Layouting::Widget that's deals in QWidget
-/// Allows to host a QWidget in the layout
-class MULTISPLITTER_EXPORT Widget_qwidget : public Widget
+///@brief A Layouting::Widget that just forwards the call to another Widget
+/// This is used to avoid diamond multiple-virtual-inheritance, which introduces
+/// unneeded complexity, forces most-derived-classes to call the ctor of the
+/// most-base class, etc.
+///
+/// Example usage
+///     TitleBar derives from Widget_wrapper
+///     TitleBarWidget derives from TitleBar and Widget_qwidget, and passes a
+///     pointer to the Widget to TitleBar, which wraps it. So a call to
+///     TitleBar::geometry() will end up calling TitleBarWidget::geometry() via
+///     the Widget_qwidget base
+class MULTISPLITTER_EXPORT Widget_wrapper : public Widget
 {
 public:
-    explicit Widget_qwidget(QWidget *thisWidget)
-        : Widget(thisWidget)
-        , m_thisWidget(thisWidget)
-    {
-    }
+    explicit Widget_wrapper(Widget *widget);
 
-    ~Widget_qwidget() override;
+    ~Widget_wrapper() override;
 
-    QWidget* asQWidget() const override {
-        return m_thisWidget;
-    }
-
+    QWidget* asQWidget() const override;
     QSize sizeHint() const override;
     QSize minSize() const override;
     QSize maxSizeHint() const override;
@@ -57,7 +58,7 @@ public:
     void setVisible(bool) const override;
     std::unique_ptr<Widget> parentWidget() const override;
     std::unique_ptr<Widget> topLevel() const override;
-    void setLayoutItem(Item *) override {}
+    void setLayoutItem(Item *) override;
     void show() override;
     void hide() override;
     void close() override;
@@ -68,14 +69,18 @@ public:
     void update() override;
     QPoint mapFromGlobal(QPoint p) const override;
     QPoint mapToGlobal(QPoint p) const override;
+    void resize(QSize) override;
+    void onCloseEvent(QCloseEvent *) override;
+    bool eventFilter(QEvent*) override;
+
     QSize widgetMinSize(const QObject *) const override;
     QSize widgetMaxSize(const QObject *) const override;
-
-    void resize(QSize) override;
+    QString id() const override;
 
 private:
-    QWidget *const m_thisWidget;
-    Q_DISABLE_COPY(Widget_qwidget)
+    Widget *const m_widget;
+    Q_DISABLE_COPY(Widget_wrapper)
 };
+
 
 }

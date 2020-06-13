@@ -23,6 +23,9 @@
 #define KD_FRAME_WIDGET_P_H
 
 #include "../Frame_p.h"
+#include "../multisplitter/Widget_qwidget.h"
+
+#include <QWidget>
 
 QT_BEGIN_NAMESPACE
 class QTabBar;
@@ -36,7 +39,10 @@ class TabWidget;
 /**
  * @brief The GUI counterpart of Frame. Inherits Frame and implements paintEvent().
  */
-class DOCKS_EXPORT FrameWidget : public Frame
+class DOCKS_EXPORT FrameWidget
+        : public QWidget
+        , public Layouting::Widget_qwidget
+        , public Frame
 {
     Q_OBJECT
 public:
@@ -45,8 +51,12 @@ public:
     QTabBar *tabBar() const;
     TabWidget *tabWidget() const;
 
+Q_SIGNALS:
+    void layoutInvalidated() override;
+
 protected:
     void paintEvent(QPaintEvent *) override;
+    void closeEvent(QCloseEvent *) override;
     QSize maxSizeHint() const override;
     void detachTab_impl(DockWidgetBase *) override;
     int indexOfDockWidget_impl(DockWidgetBase *) override;

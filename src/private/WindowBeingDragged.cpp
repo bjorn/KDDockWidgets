@@ -30,11 +30,11 @@ static Draggable* bestDraggable(Draggable *draggable)
     // When de detach a title bar it will get hidden and we only the title bar of the FloatingWindow is visible
     /// Apparently that causes problems with grabbing the mouse, so instead use a visible draggable.
     // grabbing mouse on an hidden window works usually, it's some edge case on Windows with MFC.
-    if (auto titleBar = qobject_cast<TitleBar*>(draggable->asWidget())) {
+    if (auto titleBar = dynamic_cast<TitleBar*>(draggable->asWidget())) {
         if (titleBar->isVisible())
             return draggable;
 
-        auto fw = qobject_cast<FloatingWindow*>(titleBar->window());
+        auto fw = qobject_cast<FloatingWindow*>(titleBar->topLevel()->asQWidget());
         if (!fw) // defensive, doesn't happen
             return draggable;
 

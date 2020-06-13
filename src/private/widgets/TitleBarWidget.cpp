@@ -35,14 +35,18 @@ using namespace KDDockWidgets;
 Button::~Button() {}
 
 TitleBarWidget::TitleBarWidget(Frame *parent)
-    : TitleBar(parent)
+    : QWidget(parent->asQWidget())
+    , Layouting::Widget_qwidget(this)
+    , TitleBar((Layouting::Widget_qwidget*)(this), parent)
     , m_layout(new QHBoxLayout(this))
 {
     init();
 }
 
 TitleBarWidget::TitleBarWidget(FloatingWindow *parent)
-    : TitleBar(parent)
+    : QWidget(parent)
+    , Layouting::Widget_qwidget(this)
+    , TitleBar((Layouting::Widget_qwidget*)(this), parent)
     , m_layout(new QHBoxLayout(this))
 {
     init();
@@ -50,6 +54,7 @@ TitleBarWidget::TitleBarWidget(FloatingWindow *parent)
 
 void TitleBarWidget::init()
 {
+    setFixedHeight(30);
     qCDebug(creation) << "TitleBarWidget" << this;
     m_dockWidgetIcon = new QLabel(this);
     m_layout->addWidget(m_dockWidgetIcon);
@@ -65,26 +70,26 @@ void TitleBarWidget::init()
     m_layout->addWidget(m_floatButton);
     m_layout->addWidget(m_closeButton);
 
-    connect(m_floatButton, &QAbstractButton::clicked, this, &TitleBarWidget::onFloatClicked);
-    connect(m_closeButton, &QAbstractButton::clicked, this, &TitleBarWidget::onCloseClicked);
-    connect(m_maximizeButton, &QAbstractButton::clicked, this, &TitleBarWidget::onMaximizeClicked);
+    connect(m_floatButton, &QAbstractButton::clicked, this, [this] { onFloatClicked(); } );
+    connect(m_closeButton, &QAbstractButton::clicked, this, [this] { onCloseClicked(); } );
+    connect(m_maximizeButton, &QAbstractButton::clicked, this, [this] { onMaximizeClicked(); });
 
     updateCloseButton();
     updateFloatButton();
     updateMaximizeButton();
 
-    connect(this, &TitleBar::titleChanged, this, [this] {
-        update();
+    connect(this, &TitleBarWidget::titleChanged, this, [this] {
+        QWidget::update();
     });
 
-    connect(this, &TitleBar::iconChanged, this, [this] {
+    connect(this, &TitleBarWidget::iconChanged, this, [this] {
         if (icon().isNull()) {
             m_dockWidgetIcon->setPixmap(QPixmap());
         } else {
             const QPixmap pix = icon().pixmap(QSize(28,28));
             m_dockWidgetIcon->setPixmap(pix);
         }
-        update();
+        QWidget::update();
     });
 }
 
@@ -100,9 +105,9 @@ QRect TitleBarWidget::iconRect() const
 int TitleBarWidget::buttonAreaWidth() const
 {
     if (m_floatButton->isVisible())
-        return width() - m_floatButton->x();
+        return QWidget::width() - m_floatButton->x();
     else
-        return width() - m_closeButton->x();
+        return QWidget::width() - m_closeButton->x();
 }
 
 TitleBarWidget::~TitleBarWidget()
@@ -131,8 +136,8 @@ void TitleBarWidget::paintEvent(QPaintEvent *)
 
     QStyleOptionDockWidget titleOpt;
     titleOpt.title = title();
-    titleOpt.rect = iconRect().isEmpty() ? rect().adjusted(2, 0, -buttonAreaWidth(), 0)
-                                         : rect().adjusted(iconRect().right(), 0, -buttonAreaWidth(), 0);
+    titleOpt.rect = iconRect().isEmpty() ? QWidget::rect().adjusted(2, 0, -buttonAreaWidth(), 0)
+                                         : QWidget::rect().adjusted(iconRect().right(), 0, -buttonAreaWidth(), 0);
 
     style()->drawControl(QStyle::CE_DockWidgetTitle, &titleOpt, &p, this);
 }

@@ -57,6 +57,7 @@ public:
     void setLayoutItem(Item *) override {}
     void show() override;
     void hide() override;
+    void close() override;
     void move(int x, int y) override;
     void setSize(int width, int height) override;
     void setWidth(int width) override;
@@ -64,6 +65,9 @@ public:
     void update() override;
     QPoint mapFromGlobal(QPoint p) const override;
     QPoint mapToGlobal(QPoint p) const override;
+    void resize(QSize) override;
+
+    void onCloseEvent(QCloseEvent *) override;
 
     static QSize widgetMinSize(const QWidget *w);
 

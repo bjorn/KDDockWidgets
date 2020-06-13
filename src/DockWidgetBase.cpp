@@ -482,7 +482,7 @@ Frame *DockWidgetBase::frame() const
 {
     QWidgetOrQuick *p = parentWidget();
     while (p) {
-        if (auto frame = qobject_cast<Frame *>(p))
+        if (auto frame = dynamic_cast<Frame *>(p))
             return frame;
         p = p->parentWidget();
     }
@@ -633,7 +633,7 @@ void DockWidgetBase::Private::maybeRestoreToPreviousPosition()
 
     Frame *frame = q->frame();
 
-    if (frame && frame->QWidget::parentWidget() == DockRegistry::self()->layoutForItem(layoutItem)) {
+    if (frame && frame->parent() == DockRegistry::self()->layoutForItem(layoutItem)) {
         // There's a frame already. Means the DockWidget was hidden instead of closed.
         // Nothing to do, the dock widget will simply be shown
         qCDebug(placeholder) << Q_FUNC_INFO << "Already had frame.";

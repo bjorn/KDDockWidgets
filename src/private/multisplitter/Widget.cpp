@@ -21,23 +21,68 @@
 #include "Widget.h"
 #include "Item_p.h"
 
+#include <QObject>
+
 using namespace Layouting;
 
+
 static qint64 s_nextFrameId = 1;
+
+namespace Layouting {
+///@brief helper class to use an event filter, as Widget is not a QObject
+class EventFilter : public QObject {
+public:
+    EventFilter(Widget *q)
+        : QObject(q->asQObject())
+        , q(q)
+    {
+        q->asQObject()->installEventFilter(this);
+    }
+
+    bool eventFilter(QObject *, QEvent *event) override
+    {
+        return q->eventFilter(event);
+    }
+
+    Widget *const q;
+};
+}
 
 Widget::Widget(QObject *thisObj)
     : m_id(QString::number(s_nextFrameId++))
     , m_thisObj(thisObj)
+    , m_eventFilter(new EventFilter(this))
 {
 }
 
 Widget::~Widget()
 {
+    delete m_eventFilter;
 }
 
 QString Widget::id() const
 {
     return m_id;
+}
+
+QString Widget::objectName() const
+{
+    return m_thisObj->objectName();
+}
+
+void Widget::setObjectName(const QString &name)
+{
+    m_thisObj->setObjectName(name);
+}
+
+int Widget::width() const
+{
+    return size().width();
+}
+
+int Widget::height() const
+{
+    return size().height();
 }
 
 QSize Widget::boundedMaxSize(QSize min, QSize max)

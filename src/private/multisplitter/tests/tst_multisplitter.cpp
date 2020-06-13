@@ -248,7 +248,7 @@ static bool serializeDeserializeTest(const std::unique_ptr<ItemContainer> &root)
 static std::unique_ptr<ItemContainer> createRoot()
 {
     auto hostWidget = new MyHostWidget();
-    hostWidget->setObjectName("HostWidget");
+    hostWidget->QWidget::setObjectName("HostWidget");
     hostWidget->QWidget::show();
     auto root = new ItemContainer(hostWidget);
     root->setSize({ 1000, 1000 });
@@ -260,7 +260,7 @@ static Item* createItem(QSize minSz = {}, QSize maxSz = {})
     static int count = 0;
     count++;
     auto hostWidget = new MyHostWidget();
-    hostWidget->setObjectName("HostWidget");
+    hostWidget->QWidget::setObjectName("HostWidget");
     hostWidget->QWidget::show();
     auto item = new Item(hostWidget);
     item->setGeometry(QRect(0, 0, 200, 200));
@@ -271,7 +271,7 @@ static Item* createItem(QSize minSz = {}, QSize maxSz = {})
     if (maxSz.isValid())
         guest->setMaxSize(maxSz);
 
-    guest->setObjectName(item->objectName());
+    guest->QWidget::setObjectName(item->objectName());
     item->setGuestWidget(guest);
     return item;
 }

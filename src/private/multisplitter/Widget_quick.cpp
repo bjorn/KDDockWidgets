@@ -120,6 +120,11 @@ void Widget_quick::hide()
     m_thisWidget->setVisible(false);
 }
 
+void Widget_quick::close()
+{
+    hide();
+}
+
 void Widget_quick::move(int x, int y)
 {
     QRect geo = geometry();
@@ -159,6 +164,11 @@ QPoint Widget_quick::mapToGlobal(QPoint p) const
     return p;
 }
 
+void Widget_quick::resize(QSize size)
+{
+    m_thisWidget->setSize(size);
+}
+
 QQuickItem *Widget_quick::createQQuickItem(const QString &filename, QQuickItem *parent) const
 {
     auto p = parent;
@@ -184,4 +194,9 @@ QQuickItem *Widget_quick::createQQuickItem(const QString &filename, QQuickItem *
     qquickitem->QObject::setParent(parent);
 
     return qquickitem;
+}
+
+void Widget_quick::onCloseEvent(QCloseEvent *)
+{
+    qWarning() << Q_FUNC_INFO << "Implement me!";
 }

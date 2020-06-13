@@ -157,7 +157,7 @@ FloatingWindow::FloatingWindow(Frame *frame, MainWindowBase *parent)
     // Adding a widget will trigger onFrameCountChanged, which triggers a setVisible(true).
     // The problem with setVisible(true) will forget about or requested geometry and place the window at 0,0
     // So disable the setVisible(true) call while in the ctor.
-    m_dropArea->addWidget(frame, KDDockWidgets::Location_OnTop, {});
+    m_dropArea->addWidget(frame->asQWidget(), KDDockWidgets::Location_OnTop, {});
     m_disableSetVisible = false;
 }
 
@@ -382,7 +382,7 @@ void FloatingWindow::onCloseEvent(QCloseEvent *e)
 
     const Frame::List frames = this->frames();
     for (Frame *frame : frames) {
-        qApp->sendEvent(frame, e);
+        qApp->sendEvent(frame->asQObject(), e);
         if (!e->isAccepted())
             break; // Stop when the first frame prevents closing
     }

@@ -29,7 +29,7 @@
 #include "MainWindowBase.h"
 #include "multisplitter/Item_p.h"
 #include "DockRegistry_p.h"
-#include "private/widgets/FrameWidget_p.h"
+#include "widgets/FrameWidget_p.h"
 
 // #include "indicators/AnimatedIndicators_p.h"
 #include "WindowBeingDragged_p.h"
@@ -76,8 +76,8 @@ Frame *DropArea::frameContainingPos(QPoint globalPos) const
 {
     const Layouting::Item::List &items = this->items();
     for (Layouting::Item *item : items) {
-        auto frame = static_cast<Frame*>(item->guestAsQObject());
-        if (!frame || !frame->QWidget::isVisible()) {
+        auto frame = dynamic_cast<Frame*>(item->guestAsQObject());
+        if (!frame || !frame->isVisible()) {
             continue;
         }
 
@@ -90,7 +90,7 @@ Frame *DropArea::frameContainingPos(QPoint globalPos) const
 Layouting::Item *DropArea::centralFrame() const
 {
     for (Layouting::Item *item : this->items()) {
-        if (auto f = static_cast<Frame*>(item->guestAsQObject())) {
+        if (auto f = dynamic_cast<Frame*>(item->guestAsQObject())) {
             if (f->isCentralFrame())
                 return item;
         }
@@ -138,7 +138,7 @@ void DropArea::addDockWidget(DockWidgetBase *dw, Location location, DockWidgetBa
     if (option & AddingOption_StartHidden) {
         addWidget(dw, location, relativeToFrame, DefaultSizeMode::Fair, option);
     } else {
-        addWidget(frame, location, relativeToFrame, DefaultSizeMode::Fair, option);
+        addWidget(frame->asQWidget(), location, relativeToFrame, DefaultSizeMode::Fair, option);
     }
 }
 
@@ -259,7 +259,7 @@ bool DropArea::drop(QWidgetOrQuick *droppedWindow, KDDockWidgets::Location locat
 
         auto frame = Config::self().frameworkWidgetFactory()->createFrame();
         frame->addWidget(dock);
-        addWidget(frame, location, relativeTo, DefaultSizeMode::FairButFloor);
+        addWidget(frame->asQWidget(), location, relativeTo, DefaultSizeMode::FairButFloor);
     } else if (auto floatingWindow = qobject_cast<FloatingWindow *>(droppedWindow)) {
         if (!validateAffinity(floatingWindow))
             return false;

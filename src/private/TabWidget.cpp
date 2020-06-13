@@ -148,7 +148,7 @@ TabWidget::TabWidget(QWidgetOrQuick *thisWidget, Frame *frame)
 #ifdef KDDOCKWIDGETS_QTWIDGETS
     // Little ifdefery, as this is not so easy to abstract
     QObject::connect(static_cast<QTabWidget*>(thisWidget), &QTabWidget::currentChanged,
-                     frame, &Frame::onCurrentTabChanged);
+                     frame->asQObject(), [frame] (int index) { frame->onCurrentTabChanged(index); });
 #else
     qWarning() << Q_FUNC_INFO << "Implement me";
 #endif
@@ -180,11 +180,13 @@ void TabWidget::insertDockWidget(DockWidgetBase *dock, int index)
         return;
     }
 
-    QPointer<Frame> oldFrame = dock->frame();
+    Frame *oldFrame = dock->frame();
+    QPointer<QObject> stillValid = oldFrame ? oldFrame->asQObject()
+                                            : nullptr;
     insertDockWidget(index, dock, dock->icon(), dock->title());
     setCurrentDockWidget(index);
 
-    if (oldFrame && oldFrame->beingDeletedLater()) {
+    if (stillValid && oldFrame->beingDeletedLater()) {
         // give it a push and delete it immediately.
         // Having too many deleteLater() puts us in an inconsistent state. For example if LayoutSaver::saveState()
         // would to be called while the Frame hadn't been deleted yet it would count with that frame unless hacks.
@@ -225,7 +227,7 @@ std::unique_ptr<WindowBeingDragged> TabWidget::makeWindow()
         }
     }
 
-    QRect r = m_frame->QWidget::geometry();
+    QRect r = m_frame->geometry();
 
     const QPoint globalPoint = m_thisWidget->mapToGlobal(QPoint(0, 0));
 

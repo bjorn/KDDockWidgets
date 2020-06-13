@@ -59,13 +59,15 @@ public:
 VBoxLayout::~VBoxLayout() = default;
 
 FrameWidget::FrameWidget(QWidget *parent, FrameOptions options)
-    : Frame(parent, options)
+    : QWidget(parent)
+    , Layouting::Widget_qwidget(this)
+    , Frame((Layouting::Widget_qwidget*)(this), options)
     , m_tabWidget(Config::self().frameworkWidgetFactory()->createTabWidget(this))
 {
     auto vlayout = new VBoxLayout(this);
     vlayout->setContentsMargins(0, 0, 0, 0);
     vlayout->setSpacing(0);
-    vlayout->addWidget(titleBar());
+    vlayout->addWidget(titleBar()->asQWidget());
     vlayout->addWidget(m_tabWidget->asWidget());
 
     m_tabWidget->setTabBarAutoHide(!alwaysShowsTabs());
@@ -86,10 +88,15 @@ void FrameWidget::paintEvent(QPaintEvent *)
     }
 }
 
+void FrameWidget::closeEvent(QCloseEvent *ev)
+{
+    Frame::onCloseEvent(ev);
+}
+
 QSize FrameWidget::maxSizeHint() const
 {
     // waste due to QTabWidget margins, tabbar etc.
-    const QSize waste = minSize() - dockWidgetsMinSize();
+    const QSize waste = Layouting::Widget_qwidget::minSize() - dockWidgetsMinSize();
     return waste + biggestDockWidgetMaxSize();
 }
 

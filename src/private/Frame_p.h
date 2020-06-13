@@ -31,7 +31,7 @@
 #include "docks_export.h"
 #include "QWidgetAdapter.h"
 #include "LayoutSaver_p.h"
-#include "multisplitter/Widget_qwidget.h"
+#include "multisplitter/Widget_wrapper.h"
 #include "multisplitter/Item_p.h"
 
 #include <QWidget>
@@ -45,6 +45,23 @@ class TitleBar;
 class DropArea;
 class DockWidgetBase;
 class FloatingWindow;
+class Frame;
+
+class FrameSignalsAndSlots : public QObject
+{
+    Q_OBJECT
+public:
+    explicit FrameSignalsAndSlots(Frame *qq) : q(qq) {}
+Q_SIGNALS:
+    void currentDockWidgetChanged(KDDockWidgets::DockWidgetBase *);
+    void numDockWidgetsChanged();
+    void hasTabsVisibleChanged();
+    void isInMainWindowChanged();
+public Q_SLOTS:
+    void updateTitleAndIcon();
+private:
+    Frame *const q;
+};
 
 /**
  * @brief A DockWidget wrapper that adds a QTabWidget and a TitleBar
@@ -56,16 +73,13 @@ class FloatingWindow;
  * inside a MultiSplitter (DropArea). Be it a MultiSplitter belonging to a MainWindow or belonging
  * to a FloatingWindow.
  */
-class DOCKS_EXPORT Frame : public QWidgetAdapter
-                         , public Layouting::Widget_qwidget
+class DOCKS_EXPORT Frame : public Layouting::Widget_wrapper
 {
-    Q_OBJECT
-
-    Q_PROPERTY(KDDockWidgets::TitleBar* titleBar READ titleBar CONSTANT)
 public:
+    FrameSignalsAndSlots s;
     typedef QList<Frame *> List;
 
-    explicit Frame(QWidgetOrQuick *parent = nullptr, FrameOptions = FrameOption_None);
+    explicit Frame(Layouting::Widget *thisWidget, FrameOptions = FrameOption_None);
     ~Frame() override;
 
     static Frame *deserialize(const LayoutSaver::Frame &);
@@ -228,12 +242,9 @@ public:
      */
     virtual QRect dragRect() const;
 
-Q_SIGNALS:
-    void currentDockWidgetChanged(KDDockWidgets::DockWidgetBase *);
-    void numDockWidgetsChanged();
-    void hasTabsVisibleChanged();
-    void layoutInvalidated();
-    void isInMainWindowChanged();
+/*Q_SIGNALS:*/
+    virtual void layoutInvalidated() = 0;
+
 protected:
 
     /**
@@ -271,12 +282,14 @@ private:
     Q_DISABLE_COPY(Frame)
     friend class TestDocks;
     friend class TabWidget;
+    void emitCurrentDockWidgetChanged(DockWidgetBase *dw);
     void onDockWidgetCountChanged();
     void onCurrentTabChanged(int index);
     void scheduleDeleteLater();
-    bool event(QEvent *) override;
+    bool eventFilter(QEvent *) override;
     bool m_inCtor = true;
-    TitleBar *const m_titleBar;
+    QObject *const m_thisObj;
+    TitleBar * m_titleBar = nullptr;
     DropArea *m_dropArea = nullptr;
     const FrameOptions m_options;
     QPointer<Layouting::Item> m_layoutItem;
@@ -290,8 +303,8 @@ private:
 inline QDebug operator<< (QDebug d, KDDockWidgets::Frame *frame)
 {
     if (frame) {
-        d << static_cast<QObject*>(frame);
-        d << "; window=" << frame->window();
+        d << static_cast<QObject*>(frame->asQObject());
+        d << "; window=" << frame->topLevel().get();
         d << "; options=" << frame->options();
         d << "; dockwidgets=" << frame->dockWidgets();
     } else {

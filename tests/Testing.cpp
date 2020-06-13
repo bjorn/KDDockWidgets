@@ -92,7 +92,7 @@ static void fatalWarningsMessageHandler(QtMsgType t, const QMessageLogContext &c
     }
 }
 
-bool Testing::waitForEvent(QWidget *w, QEvent::Type type, int timeout)
+bool Testing::waitForEvent(QObject *w, QEvent::Type type, int timeout)
 {
     EventFilter filter(type);
     w->installEventFilter(&filter);
@@ -128,6 +128,16 @@ bool Testing::waitForDeleted(QObject *o, int timeout)
 bool Testing::waitForResize(QWidget *w, int timeout)
 {
     return waitForEvent(w, QEvent::Resize, timeout);
+}
+
+bool Testing::waitForDeleted(Layouting::Widget *w, int timeout)
+{
+    return !w || waitForDeleted(w->asQObject(), timeout);
+}
+
+bool Testing::waitForResize(Layouting::Widget *w, int timeout)
+{
+    return waitForEvent(w->asQObject(), QEvent::Resize, timeout);
 }
 
 HostedWidget::~HostedWidget() {}

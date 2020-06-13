@@ -25,38 +25,34 @@
 #include "WindowBeingDragged_p.h"
 #include "Utils_p.h"
 #include "FrameworkWidgetFactory.h"
+#include "private/widgets/FrameWidget_p.h"
 
 #include <QWindowStateChangeEvent>
 
 using namespace KDDockWidgets;
 
-TitleBar::TitleBar(Frame *parent)
-    : QWidgetAdapter(parent)
-    , Draggable(this)
+TitleBar::TitleBar(Layouting::Widget *thisWidget, Frame *parent)
+    : Layouting::Widget_wrapper(thisWidget)
+    , Draggable(thisWidget->asQWidget())
     , m_frame(parent)
     , m_floatingWindow(nullptr)
 {
-    connect(m_frame, &Frame::numDockWidgetsChanged, this, &TitleBar::updateCloseButton);
-    init();
+    QObject::connect(&m_frame->s, &FrameSignalsAndSlots::numDockWidgetsChanged,
+                     asQObject(), [this] { updateCloseButton(); });
+
 }
 
-TitleBar::TitleBar(FloatingWindow *parent)
-    : QWidgetAdapter(parent)
-    , Draggable(this)
+TitleBar::TitleBar(Layouting::Widget *thisWidget, FloatingWindow *parent)
+    : Layouting::Widget_wrapper(thisWidget)
+    , Draggable(thisWidget->asQWidget())
     , m_frame(nullptr)
     , m_floatingWindow(parent)
 {
-    connect(m_floatingWindow, &FloatingWindow::numFramesChanged, this, &TitleBar::updateCloseButton);
-    connect(m_floatingWindow, &FloatingWindow::numFramesChanged, this, &TitleBar::updateFloatButton);
-    connect(m_floatingWindow, &FloatingWindow::numFramesChanged, this, &TitleBar::updateMaximizeButton);
-    connect(m_floatingWindow, &FloatingWindow::windowStateChanged, this, &TitleBar::updateMaximizeButton);
-    init();
-}
-
-void TitleBar::init()
-{
-    qCDebug(creation) << "TitleBar" << this;
-    setFixedHeight(30);
+    QObject *thisObj = asQObject();
+    QObject::connect(m_floatingWindow, &FloatingWindow::numFramesChanged, thisObj, [this] { updateCloseButton(); });
+    QObject::connect(m_floatingWindow, &FloatingWindow::numFramesChanged, thisObj, [this] { updateFloatButton(); } );
+    QObject::connect(m_floatingWindow, &FloatingWindow::numFramesChanged, thisObj, [this] { updateMaximizeButton(); });
+    QObject::connect(m_floatingWindow, &FloatingWindow::windowStateChanged, thisObj, [this] { updateMaximizeButton(); });
 }
 
 TitleBar::~TitleBar()
@@ -94,9 +90,9 @@ void TitleBar::setTitle(const QString &title)
         m_title = title;
         qCDebug(::title) << Q_FUNC_INFO << "\n    title=" << title
                          << "\n    this=" << this
-                         << "\n    parentWidget=" << parentWidget()
+                         << "\n    parentWidget=" << parent()
                          << "\n    isVisible=" << isVisible()
-                         << "\nwindow=" << window();
+                         << "\nwindow=" << topLevel().get();
         update();
         Q_EMIT titleChanged();
     }
@@ -108,11 +104,19 @@ void TitleBar::setIcon(const QIcon &icon)
     Q_EMIT iconChanged();
 }
 
+inline FloatingWindow *floatingWindow(Layouting::Widget *w)
+{
+    if (auto fw = qobject_cast<FloatingWindow*>(w->topLevel()->asQObject()))
+        return fw;
+
+    return nullptr;
+}
+
 std::unique_ptr<WindowBeingDragged> TitleBar::makeWindow()
 {
-    if (!isVisible() && window()->isVisible()) {
+    if (!isVisible() && topLevel()->isVisible()) {
         qWarning() << "TitleBar::makeWindow shouldn't be called on invisible title bar"
-                   << this << window()->isVisible() << parentWidget();
+                   << this << topLevel()->isVisible() << parent();
 
         if (m_floatingWindow) {
             qWarning() << "Has floating window with titlebar=" << m_floatingWindow->titleBar()
@@ -129,14 +133,14 @@ std::unique_ptr<WindowBeingDragged> TitleBar::makeWindow()
     }
 
     qCDebug(hovering) << "TitleBar::makeWindow: isFloating=" << floatingWindow() << "; isTheOnlyFrame=" << m_frame->isTheOnlyFrame() << "; frame=" << m_frame;
-    if (FloatingWindow *fw = QWidgetAdapter::floatingWindow()) { // Already floating
+    if (FloatingWindow *fw = ::floatingWindow(this)) { // Already floating
         if (m_frame->isTheOnlyFrame()) { // We dont' detach. This one drags the entire window instead.
             qCDebug(hovering) << "TitleBar::makeWindow no detach needed";
             return std::unique_ptr<WindowBeingDragged>(new WindowBeingDragged(fw, this));
         }
     }
 
-    QRect r = m_frame->QWidget::geometry();
+    QRect r = m_frame->geometry();
     qCDebug(hovering) << "TitleBar::makeWindow original geometry" << r;
     r.moveTopLeft(static_cast<Layouting::Widget*>(m_frame)->mapToGlobal(QPoint(0, 0))); // TODO: Remove static_cast if it compiles. Ambiguous base for now
 
@@ -192,7 +196,7 @@ void TitleBar::onCloseClicked()
 {
     if (m_frame) {
         if (m_frame->isTheOnlyFrame() && !m_frame->isInMainWindow()) {
-            m_frame->window()->close();
+            m_frame->topLevel()->close();
         } else {
             m_frame->close();
         }

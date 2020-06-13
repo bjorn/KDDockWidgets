@@ -23,6 +23,7 @@
 
 #include "../../docks_export.h"
 #include "../TitleBar_p.h"
+#include "../multisplitter/Widget_qwidget.h"
 
 #include <QPainter>
 #include <QToolButton>
@@ -41,7 +42,10 @@ namespace KDDockWidgets {
 class DockWidget;
 class Frame;
 
-class DOCKS_EXPORT TitleBarWidget : public TitleBar
+class DOCKS_EXPORT TitleBarWidget
+        : public QWidget
+        , public Layouting::Widget_qwidget
+        , public TitleBar
 {
     Q_OBJECT
 public:
@@ -54,11 +58,16 @@ public:
 
     static QAbstractButton* createButton(QWidget *parent, const QIcon &icon);
 
+Q_SIGNALS:
+    void titleChanged() override;
+    void iconChanged() override;
+
+protected Q_SLOTS:
+    void updateCloseButton() override;
 protected:
     void paintEvent(QPaintEvent *) override;
     void mouseDoubleClickEvent(QMouseEvent *) override;
     void updateFloatButton() override;
-    void updateCloseButton() override;
     void updateMaximizeButton() override;
 
      // The following are needed for the unit-tests

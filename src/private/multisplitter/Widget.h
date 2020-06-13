@@ -35,6 +35,7 @@
 
 QT_BEGIN_NAMESPACE
 class QWidget;
+class QCloseEvent;
 QT_END_NAMESPACE
 
 namespace Layouting {
@@ -71,15 +72,21 @@ public:
     virtual void setVisible(bool) const = 0;
     virtual void move(int x, int y) = 0;
     virtual void setSize(int width, int height) = 0;
+    virtual void resize(QSize) = 0;
     virtual void setWidth(int width) = 0;
     virtual void setHeight(int height) = 0;
     virtual std::unique_ptr<Widget> parentWidget() const = 0;
     virtual std::unique_ptr<Widget> topLevel() const = 0;
     virtual void show() = 0;
     virtual void hide() = 0;
+    virtual void close() = 0;
     virtual void update() = 0;
     virtual QPoint mapFromGlobal(QPoint) const = 0;
     virtual QPoint mapToGlobal(QPoint) const = 0;
+    QString objectName() const;
+    void setObjectName(const QString &);
+    virtual QSize widgetMinSize(const QObject *) const = 0; // TODO: Change to Widget
+    virtual QSize widgetMaxSize(const QObject *) const = 0; // TODO: Change to Widget
 
     QSize size() const {
         return geometry().size();
@@ -88,6 +95,9 @@ public:
     QRect rect() const {
         return QRect(QPoint(0, 0), size());
     }
+
+    int width() const;
+    int height() const;
 
     QObject *asQObject() const { return m_thisObj; }
     QObject *parent() const { return m_thisObj->parent(); }
@@ -100,12 +110,15 @@ public:
         return geometry().y();
     }
 
+    virtual void onCloseEvent(QCloseEvent *) {};
+    virtual bool eventFilter(QEvent*) { return false; }
+
     bool operator==(const QObject *obj) const {
         return obj == m_thisObj;
     }
 
     ///@brief returns an id for corelation purposes for saving layouts
-    QString id() const;
+    virtual QString id() const;
 
 protected:
     static QSize boundedMaxSize(QSize min, QSize max);
@@ -113,6 +126,7 @@ protected:
 private:
     const QString m_id;
     QObject *const m_thisObj;
+    QObject *const m_eventFilter;
     Q_DISABLE_COPY(Widget)
 };
 

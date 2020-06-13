@@ -52,7 +52,7 @@ public:
         pen.setWidth(4);
         p.setPen(pen);
         p.setBrush(brush);
-        p.drawRect(rect().adjusted(4, 4, -4, -4));
+        p.drawRect(QWidget::rect().adjusted(4, 4, -4, -4));
         QFont f = qApp->font();
         f.setPixelSize(30);
         f.setBold(true);

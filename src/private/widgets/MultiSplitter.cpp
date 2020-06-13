@@ -115,8 +115,8 @@ FloatingWindow *MultiSplitter::floatingWindow() const
 
 
 bool MultiSplitter::validateInputs(QWidgetOrQuick *widget,
-                                         Location location,
-                                         const Frame *relativeToFrame, AddingOption option) const
+                                   Location location,
+                                   const Frame *relativeToFrame, AddingOption option) const
 {
     if (!widget) {
         qWarning() << Q_FUNC_INFO << "Widget is null";
@@ -126,7 +126,7 @@ bool MultiSplitter::validateInputs(QWidgetOrQuick *widget,
     const bool isDockWidget = qobject_cast<DockWidgetBase*>(widget);
     const bool isStartHidden = option & AddingOption_StartHidden;
 
-    if (!qobject_cast<Frame*>(widget) && !qobject_cast<MultiSplitter*>(widget) && !isDockWidget) {
+    if (!dynamic_cast<Frame*>(widget) && !qobject_cast<MultiSplitter*>(widget) && !isDockWidget) {
         qWarning() << "Unknown widget type" << widget;
         return false;
     }
@@ -136,12 +136,12 @@ bool MultiSplitter::validateInputs(QWidgetOrQuick *widget,
         return false;
     }
 
-    if (relativeToFrame && relativeToFrame == widget) {
+    if (relativeToFrame && relativeToFrame->asQWidget() == widget) {
         qWarning() << "widget can't be relative to itself";
         return false;
     }
 
-    Layouting::Item *item = itemForFrame(qobject_cast<Frame*>(widget));
+    Layouting::Item *item = itemForFrame(dynamic_cast<Frame*>(widget));
 
     if (contains(item)) {
         qWarning() << "MultiSplitter::addWidget: Already contains" << widget;
@@ -168,10 +168,10 @@ bool MultiSplitter::validateInputs(QWidgetOrQuick *widget,
 }
 
 void MultiSplitter::addWidget(QWidgetOrQuick *w, Location location,
-                                    Frame *relativeToWidget, DefaultSizeMode defaultSizeMode,
-                                    AddingOption option)
+                              Frame *relativeToWidget, DefaultSizeMode defaultSizeMode,
+                              AddingOption option)
 {
-    auto frame = qobject_cast<Frame*>(w);
+    auto frame = dynamic_cast<Frame*>(w);
     qCDebug(addwidget) << Q_FUNC_INFO << w
                        << "; location=" << locationStr(location)
                        << "; relativeTo=" << relativeToWidget
@@ -183,7 +183,7 @@ void MultiSplitter::addWidget(QWidgetOrQuick *w, Location location,
     if (itemForFrame(frame) != nullptr) {
         // Item already exists, remove it.
         // Changing the frame parent will make the item clean itself up. It turns into a placeholder and is removed by unrefOldPlaceholders
-        frame->QWidget::setParent(nullptr); // so ~Item doesn't delete it
+        frame->setParent(nullptr); // so ~Item doesn't delete it
         frame->setLayoutItem(nullptr); // so Item is destroyed, as there's no refs to it
     }
 
@@ -304,7 +304,7 @@ Layouting::Item *MultiSplitter::itemForFrame(const Frame *frame) const
 
 Frame::List MultiSplitter::framesFrom(QWidgetOrQuick *frameOrMultiSplitter) const
 {
-    if (auto frame = qobject_cast<Frame*>(frameOrMultiSplitter))
+    if (auto frame = dynamic_cast<Frame*>(frameOrMultiSplitter))
         return { frame };
 
     if (auto msw = qobject_cast<MultiSplitter*>(frameOrMultiSplitter))
@@ -321,7 +321,7 @@ Frame::List MultiSplitter::frames() const
     result.reserve(items.size());
 
     for (Layouting::Item *item : items) {
-        if (auto f = static_cast<Frame*>(item->guestAsQObject()))
+        if (auto f = dynamic_cast<Frame*>(item->guestAsQObject()))
             result.push_back(f);
     }
 
@@ -335,7 +335,7 @@ void MultiSplitter::restorePlaceholder(DockWidgetBase *dw, Layouting::Item *item
         item->restore(newFrame);
     }
 
-    auto frame = qobject_cast<Frame*>(item->guestAsQObject());
+    auto frame = dynamic_cast<Frame*>(item->guestAsQObject());
     Q_ASSERT(frame);
 
     if (tabIndex != -1 && frame->dockWidgetCount() >= tabIndex) {
@@ -344,7 +344,7 @@ void MultiSplitter::restorePlaceholder(DockWidgetBase *dw, Layouting::Item *item
         frame->addWidget(dw);
     }
 
-    frame->QWidget::setVisible(true);
+    frame->setVisible(true);
 }
 
 void MultiSplitter::layoutEqually()
@@ -385,7 +385,7 @@ void MultiSplitter::setLayoutSize(QSize size)
     if (size != this->size()) {
         m_rootItem->setSize_recursive(size);
         if (!m_inResizeEvent && !LayoutSaver::restoreInProgress())
-            resize(size);
+            QWidget::resize(size);
     }
 }
 
@@ -476,7 +476,7 @@ LayoutSaver::MultiSplitter MultiSplitter::serialize() const
     l.frames.reserve(items.size());
     for (Layouting::Item *item : items) {
         if (!item->isContainer()) {
-            if (auto frame = qobject_cast<Frame*>(item->guestAsQObject()))
+            if (auto frame = dynamic_cast<Frame*>(item->guestAsQObject()))
                 l.frames.insert(frame->id(), frame->serialize());
         }
     }

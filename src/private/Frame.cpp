@@ -53,19 +53,24 @@ static FrameOptions actualOptions(FrameOptions options)
 
     return options;
 }
+
+void FrameSignalsAndSlots::updateTitleAndIcon()
+{
+    q->updateTitleAndIcon();
 }
 
-Frame::Frame(QWidgetOrQuick *parent, FrameOptions options)
-    : QWidgetAdapter(parent)
-    , Layouting::Widget_qwidget(this)
+}
+
+Frame::Frame(Layouting::Widget *thisWidget, FrameOptions options)
+    : Layouting::Widget_wrapper(thisWidget)
+    , s(this)
+    , m_thisObj(asQObject())
     , m_titleBar(Config::self().frameworkWidgetFactory()->createTitleBar(this))
     , m_options(actualOptions(options))
 {
     s_dbg_numFrames++;
     DockRegistry::self()->registerFrame(this);
     qCDebug(creation) << "Frame" << ((void*)this) << s_dbg_numFrames;
-
-    connect(this, &Frame::currentDockWidgetChanged, this, &Frame::updateTitleAndIcon);
     m_inCtor = false;
 }
 
@@ -96,7 +101,6 @@ void Frame::updateTitleAndIcon()
         }
 
         setObjectName(dw->uniqueName());
-
     } else if (currentTabIndex() != -1) {
         qWarning() << Q_FUNC_INFO << "Invalid dock widget for frame." << currentTabIndex();
     }
@@ -146,7 +150,7 @@ void Frame::insertWidget(DockWidgetBase *dockWidget, int index, AddingOption add
         dockWidget->close(); // Ensure closed
     } else {
         if (hasSingleDockWidget()) {
-            Q_EMIT currentDockWidgetChanged(dockWidget);
+            emitCurrentDockWidgetChanged(dockWidget);
             setObjectName(dockWidget->uniqueName());
 
             if (!m_layoutItem) {
@@ -158,14 +162,14 @@ void Frame::insertWidget(DockWidgetBase *dockWidget, int index, AddingOption add
         }
     }
 
-    connect(dockWidget, &DockWidgetBase::titleChanged, this, &Frame::updateTitleAndIcon);
-    connect(dockWidget, &DockWidgetBase::iconChanged, this, &Frame::updateTitleAndIcon);
+    QObject::connect(dockWidget, &DockWidgetBase::titleChanged, &s, &FrameSignalsAndSlots::updateTitleAndIcon);
+    QObject::connect(dockWidget, &DockWidgetBase::iconChanged, &s, &FrameSignalsAndSlots::updateTitleAndIcon);
 }
 
 void Frame::removeWidget(DockWidgetBase *dw)
 {
-    disconnect(dw, &DockWidgetBase::titleChanged, this, &Frame::updateTitleAndIcon);
-    disconnect(dw, &DockWidgetBase::iconChanged, this, &Frame::updateTitleAndIcon);
+    QObject::disconnect(dw, &DockWidgetBase::titleChanged, &s, &FrameSignalsAndSlots::updateTitleAndIcon);
+    QObject::disconnect(dw, &DockWidgetBase::iconChanged, &s, &FrameSignalsAndSlots::updateTitleAndIcon);
     removeWidget_impl(dw);
 }
 
@@ -242,17 +246,17 @@ void Frame::onDockWidgetCountChanged()
 
         // We don't really keep track of the state, so emit even if the visibility didn't change. No biggie.
         if (!(m_options & FrameOption_AlwaysShowsTabs))
-            Q_EMIT hasTabsVisibleChanged();
+            Q_EMIT s.hasTabsVisibleChanged();
     }
 
-    Q_EMIT numDockWidgetsChanged();
+    Q_EMIT s.numDockWidgetsChanged();
 }
 
 void Frame::onCurrentTabChanged(int index)
 {
     if (index != -1) {
         if (auto dock = dockWidgetAt(index)) {
-            Q_EMIT currentDockWidgetChanged(dock);
+            emitCurrentDockWidgetChanged(dock);
         } else {
             qWarning() << "dockWidgetAt" << index << "returned nullptr" << this;
         }
@@ -290,7 +294,7 @@ void Frame::updateTitleBarVisibility()
 
 bool Frame::containsMouse(QPoint globalPos) const
 {
-    return QWidget::rect().contains(Layouting::Widget_qwidget::mapFromGlobal(globalPos));
+    return rect().contains(mapFromGlobal(globalPos));
 }
 
 TitleBar *Frame::titleBar() const
@@ -350,7 +354,7 @@ FloatingWindow *Frame::floatingWindow() const
     // However, if there's a MainWindow in the hierarchy it stops, which can
     // happen with nested main windows.
 
-    QWidget *p = QWidget::parentWidget();
+    auto p = parent();
     while (p) {
         if (qobject_cast<KDDockWidgets::MainWindowBase*>(p))
             return nullptr;
@@ -358,12 +362,12 @@ FloatingWindow *Frame::floatingWindow() const
         if (auto fw = qobject_cast<FloatingWindow*>(p))
             return fw;
 
-        if (p == window()) {
+        if (p == topLevel()->asQObject()) {
             // We stop at the window. (top-levels can have parent, but we're not interested)
             return nullptr;
         }
 
-        p = p->parentWidget();
+        p = p->parent();
     }
 
     return nullptr;
@@ -430,10 +434,10 @@ bool Frame::anyNonDockable() const
 void Frame::onDockWidgetShown(DockWidgetBase *w)
 {
     if (hasSingleDockWidget() && contains(w)) { // We have to call contains because it might be being in process of being reparented
-        if (!QWidget::isVisible()) {
+        if (!isVisible()) {
             qCDebug(hiding) << "Widget" << w << " was shown, we're=" << "; visible="
-                            << QWidget::isVisible();
-            QWidget::setVisible(true);
+                            << isVisible();
+            setVisible(true);
         }
     }
 }
@@ -441,11 +445,11 @@ void Frame::onDockWidgetShown(DockWidgetBase *w)
 void Frame::onDockWidgetHidden(DockWidgetBase *w)
 {
     if (hasSingleDockWidget() && contains(w)) { // We have to call contains because it might be being in process of being reparented
-        if (QWidget::isVisible()) {
+        if (isVisible()) {
             qCDebug(hiding) << "Widget" << w << " was hidden, we're="
-                            << "; visible=" << QWidget::isVisible()
+                            << "; visible=" << isVisible()
                             << "; dockWidgets=" << dockWidgets();
-            QWidget::setVisible(false);
+            setVisible(false);
         }
     }
 }
@@ -509,17 +513,17 @@ void Frame::setDropArea(DropArea *dt)
         qCDebug(docking) << "Frame::setDropArea dt=" << dt;
         const bool wasInMainWindow = dt && isInMainWindow();
         if (m_dropArea)
-            disconnect(m_visibleWidgetCountChangedConnection);
+            m_thisObj->disconnect(m_visibleWidgetCountChangedConnection);
 
         m_dropArea = dt;
 
         if (m_dropArea) {
             // We keep the connect result so we don't dereference m_dropArea at shutdown
-            m_visibleWidgetCountChangedConnection = connect(m_dropArea, &MultiSplitter::visibleWidgetCountChanged,
-                                                            this, &Frame::updateTitleBarVisibility);
+            m_visibleWidgetCountChangedConnection = QObject::connect(m_dropArea, &MultiSplitter::visibleWidgetCountChanged,
+                                                                     m_thisObj, [this] { updateTitleBarVisibility(); });
             updateTitleBarVisibility();
             if (wasInMainWindow != isInMainWindow())
-                Q_EMIT isInMainWindowChanged();
+                Q_EMIT s.isInMainWindowChanged();
         }
     }
 }
@@ -549,19 +553,19 @@ bool Frame::isInMainWindow() const
     return m_dropArea && m_dropArea->isInMainWindow();
 }
 
-bool Frame::event(QEvent *e)
+bool Frame::eventFilter(QEvent *e)
 {
     if (e->type() == QEvent::ParentChange) {
-        qCDebug(docking) << "Frame: parent changed to =" << QWidget::parentWidget();
-        if (auto dropArea = qobject_cast<DropArea *>(QWidget::parentWidget())) {
+        qCDebug(docking) << "Frame: parent changed to =" << parent();
+        if (auto dropArea = qobject_cast<DropArea *>(parent())) {
             setDropArea(dropArea);
         } else {
-            Q_ASSERT(!QWidget::parent());
+            Q_ASSERT(!parent());
             setDropArea(nullptr);
         }
     }
 
-    return QWidgetAdapter::event(e);
+    return false;
 }
 
 Frame *Frame::deserialize(const LayoutSaver::Frame &f)
@@ -579,7 +583,7 @@ Frame *Frame::deserialize(const LayoutSaver::Frame &f)
     }
 
     frame->setCurrentTabIndex(f.currentTabIndex);
-    frame->QWidget::setGeometry(f.geometry);
+    frame->setGeometry(f.geometry);
 
     return frame;
 }
@@ -592,7 +596,7 @@ LayoutSaver::Frame Frame::serialize() const
     const DockWidgetBase::List docks = dockWidgets();
 
     frame.objectName = objectName();
-    frame.geometry = QWidget::geometry();
+    frame.geometry = geometry();
     frame.options = options();
     frame.currentTabIndex = currentTabIndex();
     frame.id = id(); // for coorelation purposes
@@ -607,7 +611,7 @@ void Frame::scheduleDeleteLater()
 {
     qCDebug(creation) << Q_FUNC_INFO << this;
     m_beingDeleted = true;
-    QTimer::singleShot(0, this, [this] {
+    QTimer::singleShot(0, m_thisObj, [this] {
         // Can't use deleteLater() here due to QTBUG-83030 (deleteLater() never delivered if triggered by a sendEvent() before event loop starts)
         delete this;
     });
@@ -617,7 +621,7 @@ QSize Frame::dockWidgetsMinSize() const
 {
     QSize size = Layouting::Item::hardcodedMinimumSize;
     for (DockWidgetBase *dw : dockWidgets())
-        size = size.expandedTo(Layouting::Widget_qwidget::widgetMinSize(dw));
+        size = size.expandedTo(widgetMinSize(dw));
 
     return size;
 }
@@ -655,4 +659,10 @@ QRect Frame::dragRect() const
     }
 
     return rect;
+}
+
+void Frame::emitCurrentDockWidgetChanged(DockWidgetBase *dw)
+{
+    Q_EMIT s.currentDockWidgetChanged(dw);
+    updateTitleAndIcon();
 }

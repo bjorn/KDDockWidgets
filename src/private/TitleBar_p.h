@@ -27,6 +27,7 @@
 #include "Draggable_p.h"
 #include "Frame_p.h"
 #include "DockWidgetBase.h"
+#include "multisplitter/Widget_wrapper.h"
 
 #include <QVector>
 #include <QIcon>
@@ -42,16 +43,13 @@ class DockWidgetBase;
 class Frame;
 class Button;
 
-class DOCKS_EXPORT TitleBar : public QWidgetAdapter
+class DOCKS_EXPORT TitleBar : public Layouting::Widget_wrapper // Assume it's inheriting from Layouting::Widget. The wrapper is just to avoid multi virtual inheritance
     , public Draggable
 {
-    Q_OBJECT
-    Q_PROPERTY(QString title READ title NOTIFY titleChanged)
-    Q_PROPERTY(bool hasIcon READ hasIcon NOTIFY iconChanged)
 public:
     typedef QVector<TitleBar *> List;
-    explicit TitleBar(Frame *parent);
-    explicit TitleBar(FloatingWindow *parent);
+    explicit TitleBar(Layouting::Widget *thisWidget, Frame *parent);
+    explicit TitleBar(Layouting::Widget *thisWidget, FloatingWindow *parent);
     ~TitleBar() override;
 
     void setTitle(const QString &title);
@@ -92,9 +90,9 @@ public:
 
     virtual void updateCloseButton() {}
 
-Q_SIGNALS:
-    void titleChanged();
-    void iconChanged();
+/*Signals:*/
+    virtual void titleChanged() = 0;
+    virtual void iconChanged() = 0;
 
 protected:
     void onCloseClicked();
@@ -113,8 +111,6 @@ protected:
 
 private:
     friend class TestDocks;
-
-    void init();
 
     QPoint m_pressPos;
     QString m_title;
