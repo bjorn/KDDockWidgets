@@ -49,10 +49,12 @@ public:
 };
 
 DockWidget::DockWidget(const QString &name, Options options)
-    : DockWidgetBase(name, options)
+    : QWidget(nullptr, Qt::Tool)
+    , Layouting::Widget_qwidget(this)
+    , DockWidgetBase((Layouting::Widget_qwidget*)(this), name, options)
     , d(new Private(this))
 {
-    connect(this, &DockWidgetBase::widgetChanged, this, [this] (QWidget *w) {
+    connect(this, &DockWidget::widgetChanged, this, [this] (QWidget *w) {
         d->layout->addWidget(w);
     });
 }

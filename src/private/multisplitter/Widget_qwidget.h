@@ -60,7 +60,7 @@ public:
     void setLayoutItem(Item *) override {}
     void show() override;
     void hide() override;
-    void close() override;
+    bool close() override;
     void move(int x, int y) override;
     void setSize(int width, int height) override;
     void setWidth(int width) override;
@@ -70,6 +70,8 @@ public:
     QPoint mapToGlobal(QPoint p) const override;
     QSize widgetMinSize(const QObject *) const override;
     QSize widgetMaxSize(const QObject *) const override;
+    void setWindowTitle(const QString &) override;
+    void setSizePolicy(QSizePolicy) override;
 
     void resize(QSize) override;
 

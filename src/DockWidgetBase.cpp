@@ -55,10 +55,12 @@ public:
         , title(dockName)
         , q(qq)
         , options(options_)
-        , toggleAction(new QAction(q))
-        , floatAction(new QAction(q))
+        , toggleAction(new QAction(q->asQWidget()))
+        , floatAction(new QAction(q->asQWidget()))
     {
-        q->connect(toggleAction, &QAction::toggled, q, [this] (bool enabled) {
+        QObject *thisObj = q->asQObject();
+        QObject::connect(toggleAction, &QAction::toggled, thisObj, [this] (bool enabled) {
+
             if (!m_updatingToggleAction) { // guard against recursiveness
                 toggleAction->blockSignals(true); // and don't emit spurious toggle. Like when a dock widget is inserted into a tab widget it might get hide events, ignore those. The Dock Widget is open.
                 toggle(enabled);
@@ -66,7 +68,7 @@ public:
             }
         });
 
-        q->connect(floatAction, &QAction::toggled, q, [this] (bool enabled) {
+        QObject::connect(floatAction, &QAction::toggled, thisObj, [this] (bool enabled) {
             if (!m_updatingFloatAction) { // guard against recursiveness
                 q->setFloating(enabled);
             }
@@ -83,7 +85,7 @@ public:
 
     FloatingWindow *floatingWindow() const
     {
-        return qobject_cast<FloatingWindow*>(q->window());
+        return qobject_cast<FloatingWindow*>(q->topLevel()->asQObject());
     }
 
     QPoint defaultCenterPosForFloating();
@@ -122,8 +124,8 @@ public:
     bool m_isForceClosing = false;
 };
 
-DockWidgetBase::DockWidgetBase(const QString &name, Options options)
-    : QWidgetOrQuick(nullptr, Qt::Tool)
+DockWidgetBase::DockWidgetBase(Layouting::Widget *thisWidget, const QString &name, Options options)
+    : Layouting::Widget_wrapper(thisWidget)
     , d(new Private(name, options, this))
 {
     d->init();
@@ -192,7 +194,7 @@ void DockWidgetBase::addDockWidgetAsTab(DockWidgetBase *other, AddingOption addi
 void DockWidgetBase::addDockWidgetToContainingWindow(DockWidgetBase *other, Location location, DockWidgetBase *relativeTo)
 {
     qCDebug(addwidget) << Q_FUNC_INFO << other << location << relativeTo;
-    if (qobject_cast<MainWindowBase*>(window())) {
+    if (qobject_cast<MainWindowBase*>(topLevel()->asQObject())) {
         qWarning() << Q_FUNC_INFO << "Just use MainWindow::addWidget() directly. This function is for floating nested windows only.";
         return;
     }
@@ -398,7 +400,7 @@ void DockWidgetBase::show()
         // This reduces flickering on some platforms
         morphIntoFloatingWindow();
     } else {
-        QWidget::show();
+        Layouting::Widget::show();
     }
 }
 
@@ -480,9 +482,9 @@ void DockWidgetBase::maybeMorphIntoFloatingWindow()
 
 Frame *DockWidgetBase::frame() const
 {
-    QWidgetOrQuick *p = parentWidget();
+    auto p = parentWidget();
     while (p) {
-        if (auto frame = dynamic_cast<Frame *>(p))
+        if (auto frame = dynamic_cast<Frame *>(p.get()))
             return frame;
         p = p->parentWidget();
     }
@@ -510,7 +512,7 @@ void DockWidgetBase::saveLastFloatingGeometry()
 {
     if (isFloating() && isVisible()) {
         // It's getting docked, save last floating position
-        lastPositions().setLastFloatingGeometry(window()->geometry());
+        lastPositions().setLastFloatingGeometry(topLevel()->geometry());
     }
 }
 
@@ -528,7 +530,7 @@ QPoint DockWidgetBase::Private::defaultCenterPosForFloating()
 void DockWidgetBase::Private::updateTitle()
 {
     if (q->isFloating())
-        q->window()->setWindowTitle(title);
+        q->topLevel()->setWindowTitle(title);
 
 
     toggleAction->setText(title);
@@ -565,11 +567,11 @@ void DockWidgetBase::Private::updateFloatAction()
     if (q->isFloating()) {
         floatAction->setEnabled(m_lastPositions.isValid());
         floatAction->setChecked(true);
-        floatAction->setToolTip(tr("Dock"));
+        floatAction->setToolTip(QObject::tr("Dock"));
     } else {
         floatAction->setEnabled(true);
         floatAction->setChecked(false);
-        floatAction->setToolTip(tr("Detach"));
+        floatAction->setToolTip(QObject::tr("Detach"));
     }
 }
 
@@ -577,21 +579,21 @@ void DockWidgetBase::Private::onDockWidgetShown()
 {
     updateToggleAction();
     updateFloatAction();
-    qCDebug(hiding) << Q_FUNC_INFO << "parent=" << q->parentWidget();
+    qCDebug(hiding) << Q_FUNC_INFO << "parent=" << q->parentWidget().get();
 }
 
 void DockWidgetBase::Private::onDockWidgetHidden()
 {
     updateToggleAction();
     updateFloatAction();
-    qCDebug(hiding) << Q_FUNC_INFO << "parent=" << q->parentWidget();
+    qCDebug(hiding) << Q_FUNC_INFO << "parent=" << q->parentWidget().get();
 }
 
 void DockWidgetBase::Private::close()
 {
     if (!m_isForceClosing && q->isFloating() && q->isVisible()) { // only user-closing is interesting to save the geometry
         // We check for isVisible so we don't save geometry if you call close() on an already closed dock widget
-        m_lastPositions.setLastFloatingGeometry(q->window()->geometry());
+        m_lastPositions.setLastFloatingGeometry(q->topLevel()->geometry());
     }
 
     qCDebug(hiding) << "DockWidget::close" << this;
@@ -690,7 +692,7 @@ void DockWidgetBase::onShown(bool spontaneous)
     d->maybeRestoreToPreviousPosition();
 
     // Transform into a FloatingWindow if this will be a regular floating dock widget.
-    QTimer::singleShot(0, this, &DockWidgetBase::maybeMorphIntoFloatingWindow);
+    QTimer::singleShot(0, asQObject(), [this] { maybeMorphIntoFloatingWindow(); });
 }
 
 void DockWidgetBase::onHidden(bool spontaneous)
@@ -728,7 +730,7 @@ DockWidgetBase *DockWidgetBase::deserialize(const LayoutSaver::DockWidget::Ptr &
     if (dw) {
         if (QWidget *w = dw->widget())
             w->setVisible(true);
-        dw->setProperty("kddockwidget_was_restored", true);
+        dw->asQObject()->setProperty("kddockwidget_was_restored", true);
 
         if (dw->affinities() != saved->affinities) {
             qWarning() << Q_FUNC_INFO << "Affinity name changed from" << dw->affinities()

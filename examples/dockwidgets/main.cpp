@@ -194,8 +194,8 @@ int main(int argc, char **argv)
         dockableMainWindow->setWindowTitle("Dockable Main Window");
         dockableMainWindow->show();
         mainWindowDockWidget->setWidget(dockableMainWindow);
-        mainWindowDockWidget->show();
-        mainWindowDockWidget->resize(800, 800);
+        mainWindowDockWidget->QWidget::show();
+        mainWindowDockWidget->QWidget::resize(800, 800);
     }
 
     const QStringList args = parser.positionalArguments();

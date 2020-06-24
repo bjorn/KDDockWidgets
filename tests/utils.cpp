@@ -90,10 +90,10 @@ DockWidgetBase *KDDockWidgets::Tests::createDockWidget(const QString &name, QWid
     auto dock = new DockWidget(name, options);
     dock->setAffinityName(affinityName);
     dock->setWidget(w);
-    dock->setObjectName(name);
-    dock->setGeometry(0, 0, 400, 400);
+    dock->QWidget::setObjectName(name);
+    dock->QWidget::setGeometry(0, 0, 400, 400);
     if (show) {
-        dock->show();
+        dock->QWidget::show();
         dock->morphIntoFloatingWindow();
         dock->activateWindow();
         Q_ASSERT(dock->window());
@@ -130,7 +130,6 @@ std::unique_ptr<MainWindow> KDDockWidgets::Tests::createMainWindow(QVector<DockD
             relativeTo = docks.at(desc.relativeToIndex).createdDock;
 
         m->addDockWidget(desc.createdDock, desc.loc, relativeTo, desc.option);
-        qDebug() << "Added" <<i;
         layout->checkSanity();
         ++i;
     }
@@ -170,7 +169,7 @@ bool KDDockWidgets::Tests::shouldBlacklistWarning(const QString &msg, const QStr
 QWidget *KDDockWidgets::Tests::draggableFor(QWidget *w)
 {
     QWidget *draggable = nullptr;
-    if (auto dock = qobject_cast<DockWidgetBase *>(w)) {
+    if (auto dock = dynamic_cast<DockWidgetBase *>(w)) {
         if (auto frame = dock->frame())
             draggable = frame->titleBar()->asQWidget();
     } else if (auto fw = qobject_cast<FloatingWindow *>(w)) {

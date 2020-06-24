@@ -73,9 +73,9 @@ void Widget_wrapper::hide() {
     m_widget->hide();
 }
 
-void Widget_wrapper::close()
+bool Widget_wrapper::close()
 {
-    m_widget->close();
+    return m_widget->close();
 }
 
 void Widget_wrapper::move(int x, int y) {
@@ -121,6 +121,11 @@ bool Widget_wrapper::eventFilter(QEvent *ev)
     return m_widget->eventFilter(ev);
 }
 
+void Widget_wrapper::setWindowTitle(const QString &title)
+{
+    m_widget->setWindowTitle(title);
+}
+
 QSize Widget_wrapper::widgetMinSize(const QObject *o) const
 {
     return m_widget->widgetMinSize(o);
@@ -134,4 +139,9 @@ QSize Widget_wrapper::widgetMaxSize(const QObject *o) const
 QString Widget_wrapper::id() const
 {
     return m_widget->id();
+}
+
+void Widget_wrapper::setSizePolicy(QSizePolicy policy)
+{
+    m_widget->setSizePolicy(policy);
 }

@@ -123,7 +123,7 @@ bool MultiSplitter::validateInputs(QWidgetOrQuick *widget,
         return false;
     }
 
-    const bool isDockWidget = qobject_cast<DockWidgetBase*>(widget);
+    const bool isDockWidget = dynamic_cast<DockWidgetBase*>(widget);
     const bool isStartHidden = option & AddingOption_StartHidden;
 
     if (!dynamic_cast<Frame*>(widget) && !qobject_cast<MultiSplitter*>(widget) && !isDockWidget) {
@@ -199,7 +199,7 @@ void MultiSplitter::addWidget(QWidgetOrQuick *w, Location location,
 
     Frame::List frames = framesFrom(w);
     unrefOldPlaceholders(frames);
-    auto dw = qobject_cast<DockWidgetBase*>(w);
+    auto dw = dynamic_cast<DockWidgetBase*>(w);
 
     if (frame) {
         newItem = new Layouting::Item(this);

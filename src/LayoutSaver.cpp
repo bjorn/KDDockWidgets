@@ -320,7 +320,7 @@ DockWidgetBase::List LayoutSaver::restoredDockWidgets() const
     DockWidgetBase::List result;
     result.reserve(allDockWidgets.size());
     for (DockWidgetBase *dw : allDockWidgets) {
-        if (dw->property("kddockwidget_was_restored").toBool())
+        if (dw->asQObject()->property("kddockwidget_was_restored").toBool())
             result.push_back(dw);
     }
 
@@ -331,7 +331,7 @@ void LayoutSaver::Private::clearRestoredProperty()
 {
     const DockWidgetBase::List &allDockWidgets = DockRegistry::self()->dockwidgets();
     for (DockWidgetBase *dw : allDockWidgets) {
-        dw->setProperty("kddockwidget_was_restored", QVariant());
+        dw->asQObject()->setProperty("kddockwidget_was_restored", QVariant());
     }
 }
 

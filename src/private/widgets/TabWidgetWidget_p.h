@@ -45,20 +45,20 @@ public:
     TabBar *tabBar() const override;
 
     int numDockWidgets() const override;
-    void removeDockWidget(DockWidgetBase *) override;
-    int indexOfDockWidget(DockWidgetBase *) const override;
+    void removeDockWidget(DockWidget *) override;
+    int indexOfDockWidget(DockWidget *) const override;
 protected:
     void paintEvent(QPaintEvent *) override;
     void tabInserted(int index) override;
     void tabRemoved(int index) override;
     bool isPositionDraggable(QPoint p) const override;
     void setCurrentDockWidget(int index) override;
-    void insertDockWidget(int index, DockWidgetBase *, const QIcon&, const QString &title) override;
+    void insertDockWidget(int index, DockWidget *, const QIcon&, const QString &title) override;
     void setTabBarAutoHide(bool) override;
-    void detachTab(DockWidgetBase *dockWidget) override;
+    void detachTab(DockWidget *dockWidget) override;
 
 
-    DockWidgetBase *dockwidgetAt(int index) const override;
+    DockWidget *dockwidgetAt(int index) const override;
     int currentIndex() const override;
 
 private:

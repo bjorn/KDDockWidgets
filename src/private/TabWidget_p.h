@@ -32,7 +32,7 @@
 #include "docks_export.h"
 #include "Draggable_p.h"
 #include "Frame_p.h"
-#include "DockWidgetBase.h"
+#include "DockWidget.h"
 
 #include <QTabBar>
 #include <QVector>
@@ -41,7 +41,7 @@
 
 namespace KDDockWidgets {
 
-class DockWidgetBase;
+class DockWidget;
 class TabWidget;
 
 ///@brief a QTabBar derived class to be used by KDDockWidgets::TabWidget
@@ -59,10 +59,10 @@ public:
      * @param index the tab number from which we want the dock widget
      * @return the dock widget at tab number @p index
      */
-    DockWidgetBase *dockWidgetAt(int index) const;
+    DockWidget *dockWidgetAt(int index) const;
 
     ///@overload
-    DockWidgetBase *dockWidgetAt(QPoint localPos) const;
+    DockWidget *dockWidgetAt(QPoint localPos) const;
 
     // Draggable
     std::unique_ptr<WindowBeingDragged> makeWindow() override;
@@ -73,7 +73,7 @@ public:
      * @param dockWidget the dock widget to detach
      * @returns the created FloatingWindow
      */
-    FloatingWindow *detachTab(DockWidgetBase *dockWidget);
+    FloatingWindow *detachTab(DockWidget *dockWidget);
 
     void onMousePress(QPoint localPos);
 
@@ -89,11 +89,11 @@ public:
      */
     QWidgetOrQuick *asWidget() const;
 
-    DockWidgetBase *singleDockWidget() const override;
+    DockWidget *singleDockWidget() const override;
 
 private:
     TabWidget *const m_tabWidget;
-    QPointer<DockWidgetBase> m_lastPressedDockWidget = nullptr;
+    QPointer<DockWidget> m_lastPressedDockWidget = nullptr;
     QWidgetOrQuick *const m_thisWidget;
 };
 
@@ -113,20 +113,20 @@ public:
     /**
      * @brief Removes a dock widget from the TabWidget
      */
-    virtual void removeDockWidget(DockWidgetBase *) = 0;
+    virtual void removeDockWidget(DockWidget *) = 0;
 
     /**
      * @brief Returns the index of the dock widget, or -1 if it doesn't exist
      */
-    virtual int indexOfDockWidget(DockWidgetBase *) const = 0;
+    virtual int indexOfDockWidget(DockWidget *) const = 0;
 
     /**
      * @brief Sets the current dock widget index
      */
     virtual void setCurrentDockWidget(int index) = 0;
-    void setCurrentDockWidget(DockWidgetBase *);
+    void setCurrentDockWidget(DockWidget *);
 
-    virtual void insertDockWidget(int index, DockWidgetBase *, const QIcon&, const QString &title) = 0;
+    virtual void insertDockWidget(int index, DockWidget *, const QIcon&, const QString &title) = 0;
 
     virtual void setTabBarAutoHide(bool) = 0;
 
@@ -136,31 +136,31 @@ public:
     virtual int currentIndex() const = 0;
 
     ///@brief appends a dock widget into this TabWidget
-    void addDockWidget(DockWidgetBase *);
+    void addDockWidget(DockWidget *);
 
     /**
      * @brief Returns the dock widget tabbed at index @p index
      */
-    virtual DockWidgetBase *dockwidgetAt(int index) const = 0;
+    virtual DockWidget *dockwidgetAt(int index) const = 0;
 
     /**
      * @brief detaches a dock widget and shows it as a floating dock widget
      * @param dockWidget the dock widget to detach
      */
-    virtual void detachTab(DockWidgetBase *dockWidget) = 0;
+    virtual void detachTab(DockWidget *dockWidget) = 0;
 
     /**
      * @brief inserts @p dockwidget into the TabWidget, at @p index
      * @param dockwidget the dockwidget to insert
      * @param index The index to where to put it
      */
-    void insertDockWidget(DockWidgetBase *dockwidget, int index);
+    void insertDockWidget(DockWidget *dockwidget, int index);
 
     /**
      * @brief Returns whether dockwidget @p dw is contained in this tab widget
      * Equivalent to indexOf(dw) != -1
      */
-    bool contains(DockWidgetBase *dw) const;
+    bool contains(DockWidget *dw) const;
 
     /**
      * @brief Returns the tab bar
@@ -177,7 +177,7 @@ public:
 
     // Draggable interface
     std::unique_ptr<WindowBeingDragged> makeWindow() override;
-    DockWidgetBase *singleDockWidget() const override;
+    DockWidget *singleDockWidget() const override;
 
 protected:
     void onTabInserted();

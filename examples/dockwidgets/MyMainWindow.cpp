@@ -85,8 +85,8 @@ MyMainWindow::MyMainWindow(const QString &uniqueName, KDDockWidgets::MainWindowO
         w->setGeometry(100, 100, 400, 400);
         auto dock = new KDDockWidgets::DockWidget(QStringLiteral("new dock %1").arg(count));
         dock->setWidget(w);
-        dock->resize(600, 600);
-        dock->show();
+        dock->QWidget::resize(600, 600);
+        dock->QWidget::show();
     });
 
     auto saveLayoutAction = fileMenu->addAction(QStringLiteral("Save Layout"));
@@ -159,7 +159,7 @@ void MyMainWindow::createDockWidgets()
     // Floating windows also support nesting, here we add 8 to the bottom of the group
     m_dockwidgets[6]->addDockWidgetToContainingWindow(m_dockwidgets[8], KDDockWidgets::Location_OnBottom);
 
-    auto floatingWindow = m_dockwidgets[6]->window();
+    auto floatingWindow = m_dockwidgets[6]->topLevel()->asQWidget();
     floatingWindow->move(100, 100);
 }
 
@@ -195,7 +195,7 @@ KDDockWidgets::DockWidgetBase *MyMainWindow::newDockWidget()
         dock->setTitle(QStringLiteral("DockWidget #%1").arg(count));
     }
 
-    dock->resize(600, 600);
+    dock->QWidget::resize(600, 600);
     m_toggleMenu->addAction(dock->toggleAction());
 
     count++;

@@ -29,6 +29,9 @@
 #define KD_DOCKWIDGET_H
 
 #include "DockWidgetBase.h"
+#include "../multisplitter/Widget_qwidget.h"
+
+#include <QWidget>
 
 QT_BEGIN_NAMESPACE
 class QCloseEvent;
@@ -41,7 +44,10 @@ namespace KDDockWidgets {
  *
  * Most of the interface lives in DockWidgetBase, to facilitate sharing with QtQuick.
  */
-class DOCKS_EXPORT DockWidget : public DockWidgetBase
+class DOCKS_EXPORT DockWidget
+        : public QWidget
+        , public Layouting::Widget_qwidget
+        , public DockWidgetBase
 {
     Q_OBJECT
 public:
@@ -60,6 +66,29 @@ public:
 
     ///@brief destructor
     ~DockWidget() override;
+
+Q_SIGNALS:
+    ///@brief signal emitted when the parent changed
+    void parentChanged();
+
+    ///@brief signal emitted when the DockWidget is shown. As in QEvent::Show.
+    void shown();
+
+    ///@brief signal emitted when the DockWidget is hidden. As in QEvent::Hide.
+    void hidden();
+
+    ///@brief signal emitted when the icon changed
+    void iconChanged();
+
+    ///@brief signal emitted when the title changed
+    void titleChanged();
+
+    ///@brief emitted when the hosted widget changed
+    void widgetChanged(QWidget*);
+
+    ///@brief emitted when the options change
+    ///@sa setOptions(), options()
+    void optionsChanged(KDDockWidgets::DockWidgetBase::Options);
 
 protected:
     bool event(QEvent *) override;

@@ -22,7 +22,6 @@
 
 #include "Widget.h"
 
-
 ///@file
 ///@brief A Layouting::Widget that just forwards the call to another Widget
 
@@ -59,9 +58,9 @@ public:
     std::unique_ptr<Widget> parentWidget() const override;
     std::unique_ptr<Widget> topLevel() const override;
     void setLayoutItem(Item *) override;
-    void show() override;
+    void show() override; // TODO: Rename so user can use DockWidget-> as it was a QWidget without ambiguity
     void hide() override;
-    void close() override;
+    bool close() override;
     void move(int x, int y) override;
     void setSize(int width, int height) override;
     void setWidth(int width) override;
@@ -72,6 +71,8 @@ public:
     void resize(QSize) override;
     void onCloseEvent(QCloseEvent *) override;
     bool eventFilter(QEvent*) override;
+    void setWindowTitle(const QString &) override;
+    void setSizePolicy(QSizePolicy) override;
 
     QSize widgetMinSize(const QObject *) const override;
     QSize widgetMaxSize(const QObject *) const override;

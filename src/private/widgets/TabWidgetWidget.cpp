@@ -29,6 +29,7 @@
 #include "Frame_p.h"
 #include "Config.h"
 #include "FrameworkWidgetFactory.h"
+#include "DockWidget.h"
 
 using namespace KDDockWidgets;
 
@@ -42,11 +43,11 @@ TabWidgetWidget::TabWidgetWidget(Frame *parent)
 
     // In case tabs closable is set by the factory, a tabClosedRequested() is emitted when the user presses [x]
     connect(this, &QTabWidget::tabCloseRequested, this, [this] (int index) {
-        if (DockWidgetBase *dw = dockwidgetAt(index)) {
+        if (DockWidget *dw = dockwidgetAt(index)) {
             if (dw->options() & DockWidgetBase::Option_NotClosable) {
                 qWarning() << "QTabWidget::tabCloseRequested: Refusing to close dock widget with Option_NotClosable option. name=" << dw->uniqueName();
             } else {
-                dw->close();
+                dw->QWidget::close();
             }
         } else {
             qWarning() << "QTabWidget::tabCloseRequested Couldn't find dock widget for index" << index << "; count=" << count();
@@ -65,12 +66,12 @@ int TabWidgetWidget::numDockWidgets() const
     return count();
 }
 
-void TabWidgetWidget::removeDockWidget(DockWidgetBase *dw)
+void TabWidgetWidget::removeDockWidget(DockWidget *dw)
 {
     removeTab(indexOf(dw));
 }
 
-int TabWidgetWidget::indexOfDockWidget(DockWidgetBase *dw) const
+int TabWidgetWidget::indexOfDockWidget(DockWidget *dw) const
 {
     return indexOf(dw);
 }
@@ -108,7 +109,7 @@ void TabWidgetWidget::setCurrentDockWidget(int index)
     setCurrentIndex(index);
 }
 
-void TabWidgetWidget::insertDockWidget(int index, DockWidgetBase *dw,
+void TabWidgetWidget::insertDockWidget(int index, DockWidget *dw,
                                        const QIcon &icon, const QString &title)
 {
     insertTab(index, dw, icon, title);
@@ -119,14 +120,14 @@ void TabWidgetWidget::setTabBarAutoHide(bool b)
     QTabWidget::setTabBarAutoHide(b);
 }
 
-void TabWidgetWidget::detachTab(DockWidgetBase *dockWidget)
+void TabWidgetWidget::detachTab(DockWidget *dockWidget)
 {
     tabBar()->detachTab(dockWidget);
 }
 
-DockWidgetBase *TabWidgetWidget::dockwidgetAt(int index) const
+DockWidget *TabWidgetWidget::dockwidgetAt(int index) const
 {
-    return qobject_cast<DockWidgetBase *>(widget(index));
+    return qobject_cast<DockWidget *>(widget(index));
 }
 
 int TabWidgetWidget::currentIndex() const

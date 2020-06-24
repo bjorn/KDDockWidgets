@@ -32,6 +32,7 @@
 #include "KDDockWidgets.h"
 #include "QWidgetAdapter.h"
 #include "LayoutSaver_p.h"
+#include "private/multisplitter/Widget_wrapper.h"
 
 #include <QVector>
 #include <QWidget>
@@ -64,13 +65,8 @@ class StateDragging;
  *
  * Do not use instantiate directly in user code. Use DockWidget instead.
  */
-#ifndef PYTHON_BINDINGS //Pyside bug: https://bugreports.qt.io/projects/PYSIDE/issues/PYSIDE-1327
-class DOCKS_EXPORT DockWidgetBase : public QWidgetOrQuick
-#else
-class DOCKS_EXPORT DockWidgetBase : public QWidget
-#endif
+class DOCKS_EXPORT DockWidgetBase : public Layouting::Widget_wrapper
 {
-    Q_OBJECT
 public:
     typedef QVector<DockWidgetBase *> List;
 
@@ -90,7 +86,8 @@ public:
      * There's no parent argument. The DockWidget is either parented to FloatingWindow or MainWindow
      * when visible, or stays without a parent when hidden.
      */
-    explicit DockWidgetBase(const QString &uniqueName, Options options = DockWidgetBase::Options());
+    explicit DockWidgetBase(Layouting::Widget *thisWidget, const QString &uniqueName,
+                            Options options = DockWidgetBase::Options());
 
     ///@brief destructor
     ~DockWidgetBase() override;
@@ -285,7 +282,7 @@ public:
     QStringList affinities() const;
 
     /// @brief Equivalent to QWidget::show(), but it's optimized to reduce flickering on some platforms
-    void show();
+    void show() override;
 
     /// @brief Brings the dock widget to the front.
     ///
@@ -308,28 +305,28 @@ public:
      */
     bool isMainWindow() const;
 
-Q_SIGNALS:
+/*Q_SIGNALS:*/
     ///@brief signal emitted when the parent changed
-    void parentChanged();
+    virtual void parentChanged() = 0;
 
     ///@brief signal emitted when the DockWidget is shown. As in QEvent::Show.
-    void shown();
+    virtual void shown() = 0;
 
     ///@brief signal emitted when the DockWidget is hidden. As in QEvent::Hide.
-    void hidden();
+    virtual void hidden() = 0;
 
     ///@brief signal emitted when the icon changed
-    void iconChanged();
+    virtual void iconChanged() = 0;
 
     ///@brief signal emitted when the title changed
-    void titleChanged();
+    virtual void titleChanged() = 0;
 
     ///@brief emitted when the hosted widget changed
-    void widgetChanged(QWidget*);
+    virtual void widgetChanged(QWidget*) = 0;
 
     ///@brief emitted when the options change
     ///@sa setOptions(), options()
-    void optionsChanged(KDDockWidgets::DockWidgetBase::Options);
+    virtual void optionsChanged(KDDockWidgets::DockWidgetBase::Options) = 0;
 
 protected:
     void onParentChanged();

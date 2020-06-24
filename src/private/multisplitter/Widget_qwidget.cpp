@@ -115,9 +115,9 @@ void Widget_qwidget::hide()
     m_thisWidget->hide();
 }
 
-void Widget_qwidget::close()
+bool Widget_qwidget::close()
 {
-    m_thisWidget->close();
+    return m_thisWidget->close();
 }
 
 void Widget_qwidget::move(int x, int y)
@@ -157,6 +157,16 @@ QSize Widget_qwidget::widgetMaxSize(const QObject *o) const
 
     max = boundedMaxSize(min, max); // for safety against weird values
     return max;
+}
+
+void Widget_qwidget::setWindowTitle(const QString &title)
+{
+    m_thisWidget->setWindowTitle(title);
+}
+
+void Widget_qwidget::setSizePolicy(QSizePolicy policy)
+{
+    m_thisWidget->setSizePolicy(policy);
 }
 
 void Widget_qwidget::resize(QSize sz)

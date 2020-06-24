@@ -30,6 +30,7 @@
 #include "TabWidget_p.h"
 #include "Config.h"
 #include "FrameworkWidgetFactory.h"
+#include "DockWidget.h"
 
 #include <QVBoxLayout>
 #include <QPainter>
@@ -102,17 +103,17 @@ QSize FrameWidget::maxSizeHint() const
 
 void FrameWidget::detachTab_impl(DockWidgetBase *dw)
 {
-    m_tabWidget->detachTab(dw);
+    m_tabWidget->detachTab(static_cast<DockWidget*>(dw));
 }
 
 int FrameWidget::indexOfDockWidget_impl(DockWidgetBase *dw)
 {
-    return m_tabWidget->indexOfDockWidget(dw);
+    return m_tabWidget->indexOfDockWidget(static_cast<DockWidget*>(dw));
 }
 
 void FrameWidget::setCurrentDockWidget_impl(DockWidgetBase *dw)
 {
-    m_tabWidget->setCurrentDockWidget(dw);
+    m_tabWidget->setCurrentDockWidget(static_cast<DockWidget*>(dw));
 }
 
 int FrameWidget::currentIndex_impl() const
@@ -122,12 +123,12 @@ int FrameWidget::currentIndex_impl() const
 
 void FrameWidget::insertDockWidget_impl(DockWidgetBase *dw, int index)
 {
-    m_tabWidget->insertDockWidget(dw, index);
+    m_tabWidget->insertDockWidget(static_cast<DockWidget*>(dw), index);
 }
 
 void FrameWidget::removeWidget_impl(DockWidgetBase *dw)
 {
-    m_tabWidget->removeDockWidget(dw);
+    m_tabWidget->removeDockWidget(static_cast<DockWidget*>(dw));
 }
 
 void FrameWidget::setCurrentTabIndex_impl(int index)
@@ -142,7 +143,7 @@ DockWidgetBase *FrameWidget::currentDockWidget_impl() const
 
 DockWidgetBase *FrameWidget::dockWidgetAt_impl(int index) const
 {
-    return qobject_cast<DockWidgetBase *>(m_tabWidget->dockwidgetAt(index));
+    return m_tabWidget->dockwidgetAt(index);
 }
 
 QTabBar *FrameWidget::tabBar() const
@@ -170,7 +171,7 @@ QRect FrameWidget::dragRect() const
     if (Config::self().flags() & Config::Flag_HideTitleBarWhenTabsVisible) {
         QTabBar *tabBar = this->tabBar();
         rect.setHeight(tabBar->height());
-        rect.setWidth(width() - tabBar->width());
+        rect.setWidth(QWidget::width() - tabBar->width());
         rect.moveTopLeft(QPoint(tabBar->width(), tabBar->y()));
         rect.moveTopLeft(QWidget::mapToGlobal(rect.topLeft()));
     }

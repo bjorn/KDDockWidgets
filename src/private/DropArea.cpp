@@ -20,7 +20,7 @@
 
 #include "DropArea_p.h"
 #include "Logging_p.h"
-#include "DockWidgetBase.h"
+#include "DockWidget.h" // TODO: DockWidgetBase instead
 #include "Draggable_p.h"
 #include "FloatingWindow_p.h"
 #include "Config.h"
@@ -136,7 +136,7 @@ void DropArea::addDockWidget(DockWidgetBase *dw, Location location, DockWidgetBa
     }
 
     if (option & AddingOption_StartHidden) {
-        addWidget(dw, location, relativeToFrame, DefaultSizeMode::Fair, option);
+        addWidget(dw->asQWidget(), location, relativeToFrame, DefaultSizeMode::Fair, option);
     } else {
         addWidget(frame->asQWidget(), location, relativeToFrame, DefaultSizeMode::Fair, option);
     }
@@ -253,7 +253,7 @@ bool DropArea::drop(QWidgetOrQuick *droppedWindow, KDDockWidgets::Location locat
 {
     qCDebug(docking) << "DropArea::addFrame";
 
-    if (auto dock = qobject_cast<DockWidgetBase *>(droppedWindow)) {
+    if (auto dock = qobject_cast<DockWidget *>(droppedWindow)) {
         if (!validateAffinity(dock))
             return false;
 

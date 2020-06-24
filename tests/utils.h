@@ -50,7 +50,7 @@ Q_DECLARE_FLAGS(ButtonActions, ButtonAction)
 struct DockDescriptor {
     Location loc;
     int relativeToIndex;
-    QPointer<DockWidgetBase> createdDock;
+    Layouting::WidgetQPointer<DockWidgetBase> createdDock;
     KDDockWidgets::AddingOption option;
 };
 

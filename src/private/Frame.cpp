@@ -162,14 +162,14 @@ void Frame::insertWidget(DockWidgetBase *dockWidget, int index, AddingOption add
         }
     }
 
-    QObject::connect(dockWidget, &DockWidgetBase::titleChanged, &s, &FrameSignalsAndSlots::updateTitleAndIcon);
-    QObject::connect(dockWidget, &DockWidgetBase::iconChanged, &s, &FrameSignalsAndSlots::updateTitleAndIcon);
+    QObject::connect(dockWidget->asQObject(), SIGNAL(titleChanged), &s, SLOT(updateTitleAndIcon));
+    QObject::connect(dockWidget->asQObject(), SIGNAL(iconChanged), &s, SLOT(updateTitleAndIcon));
 }
 
 void Frame::removeWidget(DockWidgetBase *dw)
 {
-    QObject::disconnect(dw, &DockWidgetBase::titleChanged, &s, &FrameSignalsAndSlots::updateTitleAndIcon);
-    QObject::disconnect(dw, &DockWidgetBase::iconChanged, &s, &FrameSignalsAndSlots::updateTitleAndIcon);
+    QObject::disconnect(dw->asQObject(), SIGNAL(titleChanged), &s, SLOT(updateTitleAndIcon));
+    QObject::disconnect(dw->asQObject(), SIGNAL(iconChanged), &s, SLOT(updateTitleAndIcon));
     removeWidget_impl(dw);
 }
 
@@ -405,7 +405,7 @@ void Frame::onCloseEvent(QCloseEvent *e)
     e->accept(); // Accepted by default (will close unless ignored)
     const DockWidgetBase::List docks = dockWidgets();
     for (DockWidgetBase *dock : docks) {
-        qApp->sendEvent(dock, e);
+        qApp->sendEvent(dock->asQObject(), e);
         if (!e->isAccepted())
             break; // Stop when the first dockwidget prevents closing
     }
@@ -621,7 +621,7 @@ QSize Frame::dockWidgetsMinSize() const
 {
     QSize size = Layouting::Item::hardcodedMinimumSize;
     for (DockWidgetBase *dw : dockWidgets())
-        size = size.expandedTo(widgetMinSize(dw));
+        size = size.expandedTo(dw->widgetMinSize(dw->asQObject()));
 
     return size;
 }
@@ -630,7 +630,7 @@ QSize Frame::biggestDockWidgetMaxSize() const
 {
     QSize size = Layouting::Item::hardcodedMaximumSize;
     for (DockWidgetBase *dw : dockWidgets()) {
-        const QSize dwMax = widgetMaxSize(dw);
+        const QSize dwMax = dw->widgetMaxSize(dw->asQObject());
         if (size == Layouting::Item::hardcodedMaximumSize) {
             size = dwMax;
             continue;
@@ -638,7 +638,7 @@ QSize Frame::biggestDockWidgetMaxSize() const
 
         const bool hasMaxSize = dwMax != Layouting::Item::hardcodedMaximumSize;
         if (hasMaxSize)
-            size = dw->maximumSize().expandedTo(size);
+            size = dwMax.expandedTo(size);
     }
 
     // Interpret 0 max-size as not having one too.

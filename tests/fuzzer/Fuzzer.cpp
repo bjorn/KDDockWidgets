@@ -54,10 +54,10 @@ static DockWidget* createDockWidget(const Fuzzer::DockWidgetDescriptor &dwd)
     dockWidget->setWidget(new Testing::HostedWidget(dwd.minSize));
 
     if (dwd.isFloating)
-        dockWidget->setGeometry(dwd.geometry);
+        dockWidget->QWidget::setGeometry(dwd.geometry);
 
     if (dwd.isVisible)
-        dockWidget->show();
+        dockWidget->QWidget::show();
 
     return dockWidget;
 }
@@ -266,7 +266,7 @@ DockWidgetBase *Fuzzer::getRandomRelativeTo(MainWindowBase *mainWindow, DockWidg
     DockWidgetBase::List candidates;
 
     for (DockWidgetBase *dw : docks)  {
-        if (dw != excluding && dw->window() == mainWindow)
+        if (dw != excluding && dw->topLevel()->asQObject() == mainWindow)
             candidates << dw;
     }
 

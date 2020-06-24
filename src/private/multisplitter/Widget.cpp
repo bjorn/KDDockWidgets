@@ -75,6 +75,21 @@ void Widget::setObjectName(const QString &name)
     m_thisObj->setObjectName(name);
 }
 
+void Widget::move(QPoint p)
+{
+    move(p.x(), p.y());
+}
+
+void Widget::resize(int width, int height)
+{
+    resize(QSize(width, height));
+}
+
+bool Widget::isWindow() const
+{
+    return m_thisObj == topLevel()->asQObject();
+}
+
 int Widget::width() const
 {
     return size().width();

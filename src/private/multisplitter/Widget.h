@@ -30,12 +30,14 @@
 #include <QDebug>
 #include <QObject>
 #include <qglobal.h>
+#include <QSizePolicy>
 
 #include <memory>
 
 QT_BEGIN_NAMESPACE
 class QWidget;
 class QCloseEvent;
+class QSizePolicy;
 QT_END_NAMESPACE
 
 namespace Layouting {
@@ -79,7 +81,7 @@ public:
     virtual std::unique_ptr<Widget> topLevel() const = 0;
     virtual void show() = 0;
     virtual void hide() = 0;
-    virtual void close() = 0;
+    virtual bool close() = 0;
     virtual void update() = 0;
     virtual QPoint mapFromGlobal(QPoint) const = 0;
     virtual QPoint mapToGlobal(QPoint) const = 0;
@@ -87,7 +89,11 @@ public:
     void setObjectName(const QString &);
     virtual QSize widgetMinSize(const QObject *) const = 0; // TODO: Change to Widget
     virtual QSize widgetMaxSize(const QObject *) const = 0; // TODO: Change to Widget
+    virtual void setWindowTitle(const QString &) = 0;
+    virtual void setSizePolicy(QSizePolicy) = 0; // TODO: Get our own struct ?
 
+    void move(QPoint);
+    void resize(int width, int height);
     QSize size() const {
         return geometry().size();
     }
@@ -98,6 +104,7 @@ public:
 
     int width() const;
     int height() const;
+    bool isWindow() const;
 
     QObject *asQObject() const { return m_thisObj; }
     QObject *parent() const { return m_thisObj->parent(); }
@@ -109,6 +116,8 @@ public:
     int y() const {
         return geometry().y();
     }
+
+    QPoint pos() const { return geometry().topLeft(); }
 
     virtual void onCloseEvent(QCloseEvent *) {};
     virtual bool eventFilter(QEvent*) { return false; }
@@ -137,5 +146,32 @@ inline bool operator==(const Widget *w, const QObject &obj)
 
     return w && w->operator==(&obj);
 }
+
+template <typename T>
+struct WidgetQPointer
+{
+    WidgetQPointer() = default;
+
+    WidgetQPointer(T *w)
+        : widget(w)
+    {
+        if (w) {
+            w->asQObject()->connect(w->asQObject(), &QObject::destroyed, w->asQObject(), [this] {
+                widget = nullptr;
+            });
+        }
+    }
+
+    WidgetQPointer<T> &operator=(T *w) { widget = w; return *this; }
+    T* operator->() const { return widget; }
+    T* data() const { return widget; }
+    operator T*() const { return widget; }
+    T& operator*() const { return *widget; }
+
+    operator bool() const { return widget != nullptr; }
+
+    T *widget = nullptr;
+};
+
 
 }
